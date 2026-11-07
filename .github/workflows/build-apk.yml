@@ -1,6 +1,6 @@
 name: Earn View BD APK
 
-on:
+"on":
   workflow_dispatch: {}
 
 permissions:
