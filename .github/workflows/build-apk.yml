@@ -1,22 +1,30 @@
+
 name: Earn View BD APK
 
 "on":
-  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
-  contents: ubuntu-latest  build-apk:
+  contents: read
+
+jobs:
+  build-apk:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract project
+      - name: Extract project ZIP
         run: |
           unzip -q earn-view-bd-github-ready.zip
           test -f earn-view-bd/package.json
           test -f earn-view-bd/.env.production
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -61,3 +69,5 @@ permissions:
         with:
           name: Earn-View-BD-APK
           path: earn-view-bd/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
