@@ -1,0 +1,76 @@
+YAML
+name: Build Earn & View BD APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get project ZIP from this repository
+        uses: actions/checkout@v4
+
+      - name: Extract app source
+        run: |
+          unzip -q earn-view-bd-github-ready.zip
+          cd earn-view-bd
+          test -f package.json
+          test -f .env.production
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install web and Android dependencies
+        working-directory: earn-view-bd
+        run: |
+          npm install
+          npm install @capacitor/core@6.2.1 @capacitor/cli@6.2.1 @capacitor/android@6.2.1
+
+      - name: Configure Android wrapper
+        working-directory: earn-view-bd
+        run: |
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "bd.earnview.app",
+            "appName": "Earn & View BD",
+            "webDir": "dist"
+          }
+          EOF
+
+      - name: Build web app for Android
+        working-directory: earn-view-bd
+        run: npm run build -- --base=./
+
+      - name: Create Android project
+        working-directory: earn-view-bd
+        run: npx cap add android
+
+      - name: Sync app files
+        working-directory: earn-view-bd
+        run: npx cap sync android
+
+      - name: Build installable debug APK
+        working-directory: earn-view-bd/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Save APK for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Earn-View-BD-APK
+          path: earn-view-bd/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
